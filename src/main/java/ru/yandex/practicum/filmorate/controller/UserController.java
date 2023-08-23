@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,9 +28,7 @@ public class UserController {
     @PostMapping
     public User createUser(@Valid @RequestBody User user, HttpServletRequest request) {
         logRequest(request);
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
+        checkIfUserNamePresent(user);
         newId();
         user.setId(id);
         users.put(user.getId(), user);
@@ -42,6 +39,7 @@ public class UserController {
     @PutMapping
     public User updateUser(@Valid @RequestBody User user, HttpServletRequest request) {
         logRequest(request);
+        checkIfUserNamePresent(user);
         if (!users.containsKey(user.getId())) {
             throw new ValidationException("Некорректный id для обновления пользователя.");
         } else {
@@ -58,5 +56,11 @@ public class UserController {
     private void logRequest(HttpServletRequest request) {
         log.debug("Получен запрос к эндпоинту: '{} {}', Строка параметров запроса: '{}'",
                 request.getMethod(), request.getRequestURI(), request.getQueryString());
+    }
+
+    private void checkIfUserNamePresent(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
     }
 }

@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface NotEarlierTheFirstFilm {
     String message() default
-            "End date must be after begin date and both must be in the future";
+            "The date must be after 1895-28-12";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

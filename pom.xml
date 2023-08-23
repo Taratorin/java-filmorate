@@ -5,6 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.14</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>ru.yandex.practicum</groupId>
@@ -12,12 +13,9 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>filmorate</name>
     <description>Project for Film Rating</description>
-
     <properties>
         <java.version>11</java.version>
-        <com.google.code.gson.version>2.10.1</com.google.code.gson.version>
     </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -39,16 +37,9 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
-            <version>3.1.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
         </dependency>
 
     </dependencies>
-
 
     <build>
         <plugins>
