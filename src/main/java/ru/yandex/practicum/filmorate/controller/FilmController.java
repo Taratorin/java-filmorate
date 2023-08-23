@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,25 +28,17 @@ public class FilmController {
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film, HttpServletRequest request) {
         logRequest(request);
-        if (isFilmNotValid(film)) {
-            log.debug("В запросе переданы некорректные данные для добавления фильма.");
-            throw new ValidationException("Некорректные данные для добавления фильма.");
-        } else {
-            newId();
-            film.setId(id);
-            films.put(film.getId(), film);
-            log.debug("Добавлен новый фильм: " + film);
-            return film;
-        }
+        newId();
+        film.setId(id);
+        films.put(film.getId(), film);
+        log.debug("Добавлен новый фильм: " + film);
+        return film;
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film, HttpServletRequest request) {
         logRequest(request);
-        if (isFilmNotValid(film)) {
-            log.debug("В запросе переданы некорректные данные для обновления фильма.");
-            throw new ValidationException("Некорректные данные для обновления фильма.");
-        } else if (!films.containsKey(film.getId())) {
+        if (!films.containsKey(film.getId())) {
             log.debug("В запросе передан некорректный id для обновления фильма.");
             throw new ValidationException("Некорректный id для обновления фильма.");
         } else {
@@ -55,13 +46,6 @@ public class FilmController {
             log.debug("Фильм в коллекции обновлен: " + film);
             return film;
         }
-    }
-
-    private boolean isFilmNotValid(Film film) {
-        return (film.getName().isBlank()
-                || (film.getDescription().length() > 200)
-                || !film.getReleaseDate().isAfter(LocalDate.of(1895, 12, 27))
-                || (film.getDuration() <= 0));
     }
 
     private void newId() {

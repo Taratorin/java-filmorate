@@ -29,42 +29,26 @@ public class UserController {
     @PostMapping
     public User createUser(@Valid @RequestBody User user, HttpServletRequest request) {
         logRequest(request);
-        if (isUserNotValid(user)) {
-            log.debug("В запросе переданы некорректные данные для добавления пользователя: " + user);
-            throw new ValidationException("Некорректные данные для добавления пользователя.");
-        } else {
-            if (user.getName() == null || user.getName().isBlank()) {
-                user.setName(user.getLogin());
-            }
-            newId();
-            user.setId(id);
-            users.put(user.getId(), user);
-            log.debug("Добавлен новый пользователь: " + user);
-            return user;
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
         }
+        newId();
+        user.setId(id);
+        users.put(user.getId(), user);
+        log.debug("Добавлен новый пользователь: " + user);
+        return user;
     }
 
     @PutMapping
     public User updateUser(@Valid @RequestBody User user, HttpServletRequest request) {
         logRequest(request);
-        if (isUserNotValid(user)) {
-            log.debug("В запросе переданы некорректные данные для добавления пользователя.");
-            throw new ValidationException("Некорректные данные для обновления пользователя.");
-        } else if (!users.containsKey(user.getId())) {
+        if (!users.containsKey(user.getId())) {
             throw new ValidationException("Некорректный id для обновления пользователя.");
         } else {
             users.put(user.getId(), user);
             log.debug("Пользователь обновлен: " + user);
             return user;
         }
-    }
-
-
-    private boolean isUserNotValid(User user) {
-        String emailPattern = "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$";
-        return (user.getLogin().contains(" ")
-                || user.getBirthday().isAfter(LocalDate.now())
-                || !user.getEmail().matches(emailPattern));
     }
 
     private void newId() {

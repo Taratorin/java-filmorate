@@ -12,9 +12,12 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>filmorate</name>
     <description>Project for Film Rating</description>
+
     <properties>
         <java.version>11</java.version>
+        <com.google.code.gson.version>2.10.1</com.google.code.gson.version>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -42,10 +45,10 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.10.1</version>
         </dependency>
 
     </dependencies>
+
 
     <build>
         <plugins>
