@@ -1,14 +1,12 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.Valid;
-import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import javax.servlet.http.HttpServletRequest;
-
+import javax.validation.Valid;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,10 +27,10 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createUser(@Valid @RequestBody User user, HttpServletRequest request) {
+    public User createUser(@Valid @RequestBody User user, HttpServletRequest request) {
         logRequest(request);
         if (isUserNotValid(user)) {
-            log.debug("В запросе переданы некорректные данные для добавления пользователя.");
+            log.debug("В запросе переданы некорректные данные для добавления пользователя: " + user);
             throw new ValidationException("Некорректные данные для добавления пользователя.");
         } else {
             if (user.getName() == null || user.getName().isBlank()) {
@@ -42,12 +40,12 @@ public class UserController {
             user.setId(id);
             users.put(user.getId(), user);
             log.debug("Добавлен новый пользователь: " + user);
-            return ResponseEntity.ok(user);
+            return user;
         }
     }
 
     @PutMapping
-    public ResponseEntity<?> updateUser(@Valid @RequestBody User user, HttpServletRequest request) {
+    public User updateUser(@Valid @RequestBody User user, HttpServletRequest request) {
         logRequest(request);
         if (isUserNotValid(user)) {
             log.debug("В запросе переданы некорректные данные для добавления пользователя.");
@@ -57,13 +55,16 @@ public class UserController {
         } else {
             users.put(user.getId(), user);
             log.debug("Пользователь обновлен: " + user);
-            return ResponseEntity.ok(user);
+            return user;
         }
     }
 
 
     private boolean isUserNotValid(User user) {
-        return (user.getLogin().contains(" ") || user.getBirthday().isAfter(LocalDate.now()));
+        String emailPattern = "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$";
+        return (user.getLogin().contains(" ")
+                || user.getBirthday().isAfter(LocalDate.now())
+                || !user.getEmail().matches(emailPattern));
     }
 
     private void newId() {
