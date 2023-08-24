@@ -11,12 +11,11 @@ public class NotEarlierTheFirstFilmValidator implements
 
     @Override
     public void initialize(NotEarlierTheFirstFilm constraintAnnotation) {
-        firstFilmDate = LocalDate.of(1895, 12, 27);
+        firstFilmDate = LocalDate.of(1895, 12, 28);
     }
 
     @Override
     public boolean isValid(LocalDate localDate, ConstraintValidatorContext constraintValidatorContext) {
-        return localDate == null || localDate.isAfter(firstFilmDate);
+        return localDate != null && !localDate.isBefore(firstFilmDate);
     }
-
 }
