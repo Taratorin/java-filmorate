@@ -1,55 +1,43 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmController {
 
-    private int id;
-    private final Map<Integer, Film> films = new HashMap<>();
+    private final FilmStorage filmStorage;
+
+    @Autowired
+    public FilmController(InMemoryFilmStorage filmStorage) {
+        this.filmStorage = filmStorage;
+    }
 
     @GetMapping
     public List<Film> getFilms() {
-        return new ArrayList<>(films.values());
+        return filmStorage.getFilms();
     }
 
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film, HttpServletRequest request) {
         logRequest(request);
-        newId();
-        film.setId(id);
-        films.put(film.getId(), film);
-        log.debug("Добавлен новый фильм: " + film);
-        return film;
+        return filmStorage.createFilm(film);
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film, HttpServletRequest request) {
         logRequest(request);
-        if (!films.containsKey(film.getId())) {
-            log.debug("В запросе передан некорректный id для обновления фильма.");
-            throw new ValidationException("Некорректный id для обновления фильма.");
-        } else {
-            films.put(film.getId(), film);
-            log.debug("Фильм в коллекции обновлен: " + film);
-            return film;
-        }
-    }
-
-    private void newId() {
-        ++id;
+        return filmStorage.updateFilm(film);
     }
 
     private void logRequest(HttpServletRequest request) {
