@@ -6,6 +6,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,11 +45,14 @@ public class UserService {
         Set<Integer> set2 = getUserById(id2).getFriends();
         return set1.stream()
                 .filter(set2::contains)
-                .map(userStorage.getUsersMap()::get)
+                .map(userStorage::getUserById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
     public User createUser(User user) {
+        checkIfUserNamePresent(user);
         return userStorage.createUser(user);
     }
 
@@ -57,11 +61,14 @@ public class UserService {
     }
 
     public User updateUser(User user) {
+        getUserById(user.getId());
+        checkIfUserNamePresent(user);
         return userStorage.updateUser(user);
     }
 
     public User getUserById(Integer id) {
-        return userStorage.getUserById(id);
+        return userStorage.getUserById(id)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден."));
     }
 
     public List<User> getFriends(Integer id) {
@@ -69,6 +76,12 @@ public class UserService {
     }
 
     private Boolean isUserExists(Integer id) {
-        return userStorage.getUsersMap().containsKey(id);
+        return userStorage.getUserById(id).isPresent();
+    }
+
+    private void checkIfUserNamePresent(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
     }
 }
