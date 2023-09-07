@@ -35,6 +35,11 @@ public class InMemoryFilmStorage implements FilmStorage {
         return Optional.ofNullable(films.get(id));
     }
 
+    @Override
+    public Boolean isFilmPresent(Integer id) {
+        return films.containsKey(id);
+    }
+
     private void newId() {
         ++id;
     }

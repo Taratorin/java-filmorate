@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Comparator;
@@ -24,7 +23,7 @@ public class FilmService {
 
     public Film getFilmById(int id) {
         return filmStorage.getFilmById(id)
-                .orElseThrow(() -> new NotFoundException("Фильм не найден."));
+                .orElseThrow(() -> new NotFoundException("Фильм " + id + " не найден."));
     }
 
     public Film createFilm(Film film) {
@@ -32,26 +31,23 @@ public class FilmService {
     }
 
     public Film updateFilm(Film film) {
-        // тут будет получен объект, который в дальнейшем не используется.
-        // это нормально?
-        getFilmById(film.getId());
+        int id = film.getId();
+        if (!filmStorage.isFilmPresent(id)) {
+            throw new NotFoundException("Фильм " + id + " не найден.");
+        }
         return filmStorage.updateFilm(film);
     }
 
     public Film likeFilm(int id, int userId) {
-        Film film = filmStorage.getFilmById(id)
-                .orElseThrow(() -> new NotFoundException("Фильм не найден."));
-        User user = userStorage.getUserById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден."));
+        checkUserId(userId);
+        Film film = getFilmById(id);
         film.addLike(userId);
         return film;
     }
 
     public Film unlikeFilm(int id, int userId) {
-        Film film = filmStorage.getFilmById(id)
-                .orElseThrow(() -> new NotFoundException("Фильм не найден."));
-        User user = userStorage.getUserById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден."));
+        checkUserId(userId);
+        Film film = getFilmById(id);
         film.deleteLike(userId);
         return film;
     }
@@ -64,4 +60,11 @@ public class FilmService {
                 .limit(count)
                 .collect(Collectors.toList());
     }
+
+    private void checkUserId(Integer userId) {
+        if (!userStorage.isUserPresent(userId)) {
+            throw new NotFoundException("Пользователь " + userId + " не найден.");
+        }
+    }
+
 }

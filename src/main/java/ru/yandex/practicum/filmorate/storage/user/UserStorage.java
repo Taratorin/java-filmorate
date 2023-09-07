@@ -15,4 +15,6 @@ public interface UserStorage {
     Optional<User> getUserById(Integer id);
 
     List<User> getFriends(Integer id);
+
+    Boolean isUserPresent(Integer id);
 }

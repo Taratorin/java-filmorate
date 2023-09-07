@@ -45,6 +45,11 @@ public class InMemoryUserStorage implements UserStorage {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Boolean isUserPresent(Integer id) {
+        return users.containsKey(id);
+    }
+
     private void newId() {
         ++id;
     }
