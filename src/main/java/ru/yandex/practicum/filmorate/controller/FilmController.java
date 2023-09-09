@@ -1,59 +1,67 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.film.FilmService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.HashMap;
+import javax.validation.constraints.Min;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/films")
+@RequiredArgsConstructor
+@Validated
 public class FilmController {
 
-    private int id;
-    private final Map<Integer, Film> films = new HashMap<>();
+    private final FilmService filmService;
 
     @GetMapping
     public List<Film> getFilms() {
-        return new ArrayList<>(films.values());
+        return filmService.getFilms();
+    }
+
+    @GetMapping("/{id}")
+    public Film getFilmById(@PathVariable int id) {
+        return filmService.getFilmById(id);
+    }
+
+    @GetMapping("/popular")
+    public List<Film> getPopularFilms(
+            @RequestParam(defaultValue = "10") @Min(1) int count) {
+        return filmService.getPopularFilms(count);
     }
 
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film, HttpServletRequest request) {
         logRequest(request);
-        newId();
-        film.setId(id);
-        films.put(film.getId(), film);
-        log.debug("Добавлен новый фильм: " + film);
-        return film;
+        return filmService.createFilm(film);
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film, HttpServletRequest request) {
         logRequest(request);
-        if (!films.containsKey(film.getId())) {
-            log.debug("В запросе передан некорректный id для обновления фильма.");
-            throw new ValidationException("Некорректный id для обновления фильма.");
-        } else {
-            films.put(film.getId(), film);
-            log.debug("Фильм в коллекции обновлен: " + film);
-            return film;
-        }
+        return filmService.updateFilm(film);
     }
 
-    private void newId() {
-        ++id;
+    @PutMapping("/{id}/like/{userId}")
+    public Film likeFilm(@PathVariable @Min(0) int id, @PathVariable int userId) {
+        return filmService.likeFilm(id, userId);
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public Film unlikeFilm(@PathVariable @Min(0) int id, @PathVariable int userId) {
+        return filmService.unlikeFilm(id, userId);
     }
 
     private void logRequest(HttpServletRequest request) {
         log.debug("Получен запрос к эндпоинту: '{} {}', Строка параметров запроса: '{}'",
                 request.getMethod(), request.getRequestURI(), request.getQueryString());
     }
+
 }
