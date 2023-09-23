@@ -1,3 +1,4 @@
 # java-filmorate
-Ссылка на ER diagram проекта:
-https://github.com/Taratorin/java-filmorate/blob/main/Filmorate%20ER%20diagram.png
+**[Ссылка на ER diagram проекта](/Filmorate-ER-diagram.svg)**
+
+![](/Filmorate-ER-diagram.svg)
