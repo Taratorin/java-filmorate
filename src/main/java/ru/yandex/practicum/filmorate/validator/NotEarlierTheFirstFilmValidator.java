@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.validator;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 import java.time.LocalDate;
+import java.util.Date;
 
 public class NotEarlierTheFirstFilmValidator implements
         ConstraintValidator<NotEarlierTheFirstFilm, LocalDate> {
@@ -15,7 +16,7 @@ public class NotEarlierTheFirstFilmValidator implements
     }
 
     @Override
-    public boolean isValid(LocalDate localDate, ConstraintValidatorContext constraintValidatorContext) {
-        return localDate != null && !localDate.isBefore(firstFilmDate);
+    public boolean isValid(LocalDate date, ConstraintValidatorContext constraintValidatorContext) {
+        return date != null && !date.isBefore(firstFilmDate);
     }
 }
