@@ -12,9 +12,11 @@ public interface UserStorage {
 
     User updateUser(User user);
 
-    Optional<User> getUserById(Integer id);
+    Optional<User> getUserById(int id);
 
-    List<User> getFriends(Integer id);
+    List<User> getFriends(int id);
 
-    Boolean isUserPresent(Integer id);
+    Boolean isUserPresent(int id);
+
+    void checkAndUpdateFriends(int id, int friendId);
 }

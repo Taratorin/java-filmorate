@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -16,19 +17,18 @@ public class UserService {
     private final UserStorage userStorage;
 
     @Autowired
-    public UserService(InMemoryUserStorage userStorage) {
+    public UserService(@Qualifier("userDbStorage") UserStorage userStorage) {
         this.userStorage = userStorage;
     }
 
-    public void addFriend(Integer id1, Integer id2) {
-        if (!isUserExists(id1) && !isUserExists(id2)) {
+    public void addFriend(int id, int friendId) {
+        if (!isUserExists(id) && !isUserExists(friendId)) {
             throw new NotFoundException("Пользователь не существует.");
         }
-        getUserById(id1).addFriend(getUserById(id2).getId());
-        getUserById(id2).addFriend(getUserById(id1).getId());
+        userStorage.checkAndUpdateFriends(id, friendId);
     }
 
-    public void deleteFriend(Integer id1, Integer id2) {
+    public void deleteFriend(int id1, int id2) {
         if (!isUserExists(id1) || !isUserExists(id2)) {
             throw new NotFoundException("Пользователь не существует.");
         }
@@ -40,7 +40,7 @@ public class UserService {
         }
     }
 
-    public List<User> getCommonFriends(Integer id1, Integer id2) {
+    public List<User> getCommonFriends(int id1, int id2) {
         Set<Integer> set1 = getUserById(id1).getFriends();
         Set<Integer> set2 = getUserById(id2).getFriends();
         return set1.stream()

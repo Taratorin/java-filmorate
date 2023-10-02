@@ -6,7 +6,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Component
+@Component("inMemoryUserStorage")
 public class InMemoryUserStorage implements UserStorage {
 
     private int id;
@@ -33,12 +33,12 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public Optional<User> getUserById(Integer id) {
+    public Optional<User> getUserById(int id) {
         return Optional.ofNullable(users.get(id));
     }
 
     @Override
-    public List<User> getFriends(Integer id) {
+    public List<User> getFriends(int id) {
         User user = users.get(id);
         return user.getFriends().stream()
                 .map(users::get)
@@ -46,8 +46,13 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public Boolean isUserPresent(Integer id) {
+    public Boolean isUserPresent(int id) {
         return users.containsKey(id);
+    }
+
+    @Override
+    public void checkAndUpdateFriends(int id, int friendId) {
+        //
     }
 
     private void newId() {

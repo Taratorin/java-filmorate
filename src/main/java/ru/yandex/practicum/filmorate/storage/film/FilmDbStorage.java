@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
+import lombok.AllArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
@@ -12,13 +13,10 @@ import java.sql.SQLException;
 import java.util.*;
 
 @Component("filmDbStorage")
+@AllArgsConstructor
 public class FilmDbStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public FilmDbStorage(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
     @Override
     public List<Film> getFilms() {
@@ -34,6 +32,9 @@ public class FilmDbStorage implements FilmStorage {
                 "VALUES(?, ?, ?, ?, ?, ?);";
         jdbcTemplate.update(sql, film.getId(), film.getName(), film.getDescription(), film.getReleaseDate(),
                 film.getDuration(), film.getMpa().getId());
+        if (film.getGenres() != null) {
+            updateFilmGenre(film);
+        }
         return film;
     }
 
@@ -44,38 +45,29 @@ public class FilmDbStorage implements FilmStorage {
                 "WHERE FILM_ID = ?;";
         jdbcTemplate.update(sql, film.getName(), film.getDescription(), film.getReleaseDate(),
                 film.getDuration(), film.getMpa().getId(), film.getId());
+        if (film.getGenres() != null) {
+            updateFilmGenre(film);
+        }
         return film;
+    }
+
+    private void updateFilmGenre(Film film) {
+        String sqlDelete = "DELETE FROM PUBLIC.FILM_GENRE WHERE FILM_ID = ?;";
+        jdbcTemplate.update(sqlDelete, film.getId());
+        String sql = "INSERT INTO PUBLIC.FILM_GENRE (FILM_ID, GENRE_ID) VALUES(?, ?);";
+        for (Genre genre : film.getGenres()) {
+            jdbcTemplate.update(sql, film.getId(), genre.getId());
+        }
     }
 
     @Override
     public Optional<Film> getFilmById(Integer id) {
-        return getOptionalById(id);
-    }
-
-    @Override
-    public Boolean isFilmPresent(Integer id) {
-        String sql = "SELECT COUNT(FILM_ID) AS ID FROM PUBLIC.FILMS WHERE FILM_ID = ?;";
+        String sql = "SELECT * FROM PUBLIC.FILMS WHERE FILM_ID = ?;";
+        LinkedHashSet<Genre> genres = getGenres(id);
         SqlRowSet set = jdbcTemplate.queryForRowSet(sql, id);
-        set.next();
-        return set.getInt(1) == 1;
-    }
-
-    private int getId() {
-        String sqlGetId = "SELECT COUNT(FILM_ID) AS ID FROM PUBLIC.FILMS;";
-        SqlRowSet set = jdbcTemplate.queryForRowSet(sqlGetId);
-        set.next();
-        return set.getInt(1) + 1;
-    }
-
-    private Optional<Film> getOptionalById(int id) {
-        String sqlGetId = "SELECT * FROM PUBLIC.FILMS WHERE FILM_ID = ?;";
-        Set<Genre> genres = getGenres(id);
-        SqlRowSet set = jdbcTemplate.queryForRowSet(sqlGetId, id);
-        set.last();
-        if (set.getRow() == 0) {
+        if (!set.next()) {
             return Optional.empty();
         } else {
-            set.first();
             return Optional.of(Film.builder()
                     .id(set.getInt("FILM_ID"))
                     .name(set.getString("TITLE"))
@@ -88,9 +80,23 @@ public class FilmDbStorage implements FilmStorage {
         }
     }
 
+    @Override
+    public Boolean isFilmPresent(Integer id) {
+        String sql = "SELECT COUNT(FILM_ID) AS ID FROM PUBLIC.FILMS WHERE FILM_ID = ?;";
+        SqlRowSet set = jdbcTemplate.queryForRowSet(sql, id);
+        return set.next();
+    }
+
+    private int getId() {
+        String sqlGetId = "SELECT COUNT(FILM_ID) AS ID FROM PUBLIC.FILMS;";
+        SqlRowSet set = jdbcTemplate.queryForRowSet(sqlGetId);
+        set.next();
+        return set.getInt(1) + 1;
+    }
+
     private Film makeFilm(ResultSet rs) throws SQLException {
         int id = rs.getInt("FILM_ID");
-        Set<Genre> genres = getGenres(id);
+        LinkedHashSet<Genre> genres = getGenres(id);
         return Film.builder()
                 .id(id)
                 .name(rs.getString("TITLE"))
@@ -114,17 +120,17 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private Genre makeGenre(ResultSet rs) throws SQLException {
-        Genre genre = new Genre();
-        genre.setId(rs.getInt("GENRE_ID"));
-        genre.setName(rs.getString("GENRE_TITLE"));
-        return genre;
+        return new Genre(
+                rs.getInt("GENRE_ID"),
+                rs.getString("GENRE_TITLE")
+        );
     }
 
-    private Set<Genre> getGenres(int id) {
+    private LinkedHashSet<Genre> getGenres(int id) {
         String sql = "SELECT g.GENRE_ID, g.GENRE_TITLE " +
                 "FROM FILM_GENRE fg JOIN GENRES g ON fg.GENRE_ID = g.GENRE_ID " +
                 "WHERE fg.FILM_ID = " + id;
         List<Genre> query = jdbcTemplate.query(sql, (rs, rowNum) -> makeGenre(rs));
-        return new HashSet<>(query);
+        return new LinkedHashSet<>(query);
     }
 }
