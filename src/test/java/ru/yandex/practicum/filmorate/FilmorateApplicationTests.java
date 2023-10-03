@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @AutoConfigureTestDatabase
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Transactional
-class FilmoRateApplicationTests {
+class FilmorateApplicationTests {
 
     private final UserDbStorage userStorage;
     private final FilmDbStorage filmStorage;
