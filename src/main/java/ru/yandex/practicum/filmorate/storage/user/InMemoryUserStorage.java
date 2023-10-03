@@ -52,7 +52,12 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public void checkAndUpdateFriends(int id, int friendId) {
-        //
+        users.get(id).addFriend(friendId);
+    }
+
+    @Override
+    public void deleteFriend(int id, int friendId) {
+        users.get(id).deleteFriend(friendId);
     }
 
     private void newId() {

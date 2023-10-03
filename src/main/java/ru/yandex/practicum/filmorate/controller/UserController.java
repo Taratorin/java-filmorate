@@ -57,7 +57,7 @@ public class UserController {
     @PutMapping("/{id}/friends/{friendId}")
     public void addToFriends(@PathVariable int id, @PathVariable int friendId) {
         if (id < 0 || friendId < 0) {
-            throw new NotFoundException("Пользователь не найден.");
+            throw new NotFoundException("Пользователь не найден: некорректный id.");
         } else {
             userService.addFriend(id, friendId);
         }

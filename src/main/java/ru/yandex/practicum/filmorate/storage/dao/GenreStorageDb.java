@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage.genre;
+package ru.yandex.practicum.filmorate.storage.dao;
 
 import lombok.AllArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Component
 @AllArgsConstructor
-public class GenreStorage {
+public class GenreStorageDb {
 
     private final JdbcTemplate jdbcTemplate;
 

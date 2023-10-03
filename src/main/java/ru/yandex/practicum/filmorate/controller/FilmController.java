@@ -48,7 +48,7 @@ public class FilmController {
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public Film likeFilm(@PathVariable @Min(0) int id, @PathVariable int userId) {
+    public Film likeFilm(@PathVariable int id, @PathVariable int userId) {
         return filmService.likeFilm(id, userId);
     }
 
@@ -61,5 +61,4 @@ public class FilmController {
         log.debug("Получен запрос к эндпоинту: '{} {}', Строка параметров запроса: '{}'",
                 request.getMethod(), request.getRequestURI(), request.getQueryString());
     }
-
 }

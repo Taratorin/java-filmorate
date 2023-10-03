@@ -19,4 +19,6 @@ public interface UserStorage {
     Boolean isUserPresent(int id);
 
     void checkAndUpdateFriends(int id, int friendId);
+
+    void deleteFriend(int id, int friendId);
 }

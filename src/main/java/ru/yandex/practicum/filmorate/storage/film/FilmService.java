@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
@@ -9,6 +8,7 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,7 +24,10 @@ public class FilmService {
     }
 
     public List<Film> getFilms() {
-        return filmStorage.getFilms();
+        return filmStorage.getFilms().stream()
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
     }
 
     public Film getFilmById(int id) {
@@ -38,33 +41,39 @@ public class FilmService {
 
     public Film updateFilm(Film film) {
         int id = film.getId();
-        if (!filmStorage.isFilmPresent(id)) {
-            throw new NotFoundException("Фильм " + id + " не найден.");
-        }
+        checkFilmId(id);
         return filmStorage.updateFilm(film);
     }
 
     public Film likeFilm(int id, int userId) {
+        checkFilmId(id);
         checkUserId(userId);
-        Film film = getFilmById(id);
-        film.addLike(userId);
-        return film;
+        filmStorage.addLikeToFilm(id, userId);
+        return getFilmById(id);
     }
 
     public Film unlikeFilm(int id, int userId) {
+        checkFilmId(id);
         checkUserId(userId);
-        Film film = getFilmById(id);
-        film.deleteLike(userId);
-        return film;
+        filmStorage.deleteLike(id, userId);
+        return getFilmById(id);
     }
 
     public List<Film> getPopularFilms(int count) {
         Comparator<Film> comparator =
                 Comparator.comparing(film -> -1 * film.getLikesCount());
         return filmStorage.getFilms().stream()
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .sorted(comparator)
                 .limit(count)
                 .collect(Collectors.toList());
+    }
+
+    private void checkFilmId(int id) {
+        if (!filmStorage.isFilmPresent(id)) {
+            throw new NotFoundException("Фильм " + id + " не найден.");
+        }
     }
 
     private void checkUserId(Integer userId) {
@@ -72,5 +81,4 @@ public class FilmService {
             throw new NotFoundException("Пользователь " + userId + " не найден.");
         }
     }
-
 }

@@ -7,8 +7,6 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,26 +26,20 @@ public class UserService {
         userStorage.checkAndUpdateFriends(id, friendId);
     }
 
-    public void deleteFriend(int id1, int id2) {
-        if (!isUserExists(id1) || !isUserExists(id2)) {
-            throw new NotFoundException("Пользователь не существует.");
-        }
-        User u1 = getUserById(id1);
-        User u2 = getUserById(id2);
-        if (u1.getFriends().contains(u2.getId())) {
-            getUserById(id1).deleteFriend(u2.getId());
-            u2.deleteFriend(u1.getId());
+    public void deleteFriend(int id, int friendId) {
+        User u = getUserById(id);
+        User friend = getUserById(friendId);
+        List<User> friends = getFriends(id);
+        if (friends.contains(friend)) {
+            userStorage.deleteFriend(id, friendId);
         }
     }
 
     public List<User> getCommonFriends(int id1, int id2) {
-        Set<Integer> set1 = getUserById(id1).getFriends();
-        Set<Integer> set2 = getUserById(id2).getFriends();
-        return set1.stream()
-                .filter(set2::contains)
-                .map(userStorage::getUserById)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+        List<User> list1 = getFriends(id1);
+        List<User> list2 = getFriends(id2);
+        return list1.stream()
+                .filter(list2::contains)
                 .collect(Collectors.toList());
     }
 

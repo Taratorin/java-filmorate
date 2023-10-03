@@ -1,10 +1,11 @@
-package ru.yandex.practicum.filmorate.storage.user;
+package ru.yandex.practicum.filmorate.storage.dao;
 
 import lombok.AllArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -60,14 +61,17 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public List<User> getFriends(int id) {
-        String sql = "SELECT u.USER_ID, u.EMAIL, u.LOGIN, u.NAME, u.BIRTHDAY FROM FRIENDS f" +
-                " JOIN USERS u ON f.FRIEND_ID = u.USER_ID;";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> makeUser(rs));
+        String sql = "SELECT u.USER_ID, u.EMAIL, u.LOGIN, u.NAME, u.BIRTHDAY FROM FRIENDS f " +
+                "JOIN USERS u ON f.FRIEND_ID = u.USER_ID WHERE f.USER_ID = ?\n" +
+                "UNION\n" +
+                "SELECT u.USER_ID, u.EMAIL, u.LOGIN, u.NAME, u.BIRTHDAY FROM FRIENDS f " +
+                "JOIN USERS u ON f.USER_ID = u.USER_ID WHERE (f.FRIEND_ID = ? AND f.IF_APPROVED = true);";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> makeUser(rs), id, id);
     }
 
     @Override
     public Boolean isUserPresent(int id) {
-        String sql = "SELECT COUNT(USER_ID) AS ID FROM PUBLIC.USERS WHERE USER_ID = ?;";
+        String sql = "SELECT USER_ID FROM PUBLIC.USERS WHERE USER_ID = ?;";
         SqlRowSet set = jdbcTemplate.queryForRowSet(sql, id);
         return set.next();
     }
@@ -77,16 +81,42 @@ public class UserDbStorage implements UserStorage {
         String sql = "SELECT * FROM PUBLIC.FRIENDS WHERE USER_ID = ? AND FRIEND_ID = ?;";
         SqlRowSet setDirect = jdbcTemplate.queryForRowSet(sql, id, friendId);
         SqlRowSet setReversed = jdbcTemplate.queryForRowSet(sql, friendId, id);
-        boolean a = setDirect.next();
-        boolean b = setReversed.next();
-        System.out.println(a);
-        System.out.println(b);
-        if (!a && !b) {
+        boolean isDirectNotEmpty = setDirect.next();
+        boolean isReversedNotEmpty = setReversed.next();
+        if (!isDirectNotEmpty && !isReversedNotEmpty) {
             String sqlInsert = "INSERT INTO PUBLIC.FRIENDS (USER_ID, FRIEND_ID, IF_APPROVED) VALUES (?, ?, ?);";
             jdbcTemplate.update(sqlInsert, id, friendId, false);
-        } else if (b) {
+        } else if (isReversedNotEmpty) {
             String sqlUpdate = "UPDATE PUBLIC.FRIENDS SET FRIEND_ID = ?, IF_APPROVED = true WHERE USER_ID = ?;";
             jdbcTemplate.update(sqlUpdate, id, friendId);
+        }
+    }
+
+    @Override
+    public void deleteFriend(int id, int friendId) {
+        String sql = "SELECT * FROM PUBLIC.FRIENDS WHERE USER_ID = ? AND FRIEND_ID = ?;";
+        SqlRowSet setDirect = jdbcTemplate.queryForRowSet(sql, id, friendId);
+        boolean isDirectNotEmpty = setDirect.next();
+        if (isDirectNotEmpty) {
+            boolean ifApproved = setDirect.getBoolean("IF_APPROVED");
+            String sqlDelete = "DELETE FROM PUBLIC.FRIENDS WHERE USER_ID = ? AND FRIEND_ID = ?;";
+            if (!ifApproved) {
+                jdbcTemplate.update(sqlDelete, id, friendId);
+            } else {
+                jdbcTemplate.update(sqlDelete, id, friendId);
+                String sqlUpdate = "INSERT INTO PUBLIC.FRIENDS (USER_ID, FRIEND_ID, IF_APPROVED) VALUES (?, ?, ?);";
+                jdbcTemplate.update(sqlUpdate, friendId, id, false);
+            }
+        } else {
+            SqlRowSet setReversed = jdbcTemplate.queryForRowSet(sql, friendId, id);
+            boolean isReversedNotEmpty = setReversed.next();
+            if (isReversedNotEmpty) {
+                boolean ifApproved = setReversed.getBoolean("IF_APPROVED");
+                if (ifApproved) {
+                    String sqlUpdate = "INSERT INTO PUBLIC.FRIENDS (USER_ID, FRIEND_ID, IF_APPROVED) VALUES (?, ?, ?);";
+                    jdbcTemplate.update(sqlUpdate, friendId, id, false);
+                }
+            }
         }
     }
 

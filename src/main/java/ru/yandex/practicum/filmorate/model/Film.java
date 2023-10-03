@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import ru.yandex.practicum.filmorate.validator.NotEarlierTheFirstFilm;
@@ -30,20 +29,18 @@ public class Film {
     private int duration;
     private Mpa mpa;
     private LinkedHashSet<Genre> genres;
-
     @JsonIgnore
-    private final Set<Integer> likes = new HashSet<>();
+    private Set<Integer> likes = new HashSet<>();
 
-    public void addLike(Integer id) {
+    public void addLike(int id) {
         likes.add(id);
     }
 
-    public void deleteLike(Integer id) {
+    public void deleteLike(int id) {
         likes.remove(id);
     }
 
     public int getLikesCount() {
         return likes.size();
     }
-
 }
