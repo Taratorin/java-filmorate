@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-@Component("filmDbStorage")
+@Component
 @AllArgsConstructor
 public class FilmDbStorage implements FilmStorage {
 
@@ -38,7 +38,7 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(sql, film.getId(), film.getName(), film.getDescription(), film.getReleaseDate(),
                 film.getDuration(), mpaId);
         film.setMpa(makeMpa(mpaId));
-        film.setLikes(getLikesSet(film.getId()));
+        film.setLikesCount(getLikesSet(film.getId()).size());
         if (film.getGenres() != null) {
             updateFilmGenre(film);
         }
@@ -54,7 +54,7 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(sql, film.getName(), film.getDescription(), film.getReleaseDate(),
                 film.getDuration(), mpaId, film.getId());
         film.setMpa(makeMpa(mpaId));
-        film.setLikes(getLikesSet(film.getId()));
+        film.setLikesCount(getLikesSet(film.getId()).size());
         if (film.getGenres() != null) {
             updateFilmGenre(film);
         }
@@ -128,7 +128,7 @@ public class FilmDbStorage implements FilmStorage {
                     .mpa(makeMpa(rs.getInt("RATING_ID")))
                     .genres(genres)
                     .build();
-            film.setLikes(getLikesSet(id));
+            film.setLikesCount(getLikesSet(film.getId()).size());
             return Optional.of(film);
         } catch (SQLException e) {
             return Optional.empty();

@@ -27,20 +27,9 @@ public class Film {
     private LocalDate releaseDate;
     @Min(1)
     private int duration;
+    @NotNull
     private Mpa mpa;
     private LinkedHashSet<Genre> genres;
-    @JsonIgnore
-    private Set<Integer> likes = new HashSet<>();
+    private int likesCount;
 
-    public void addLike(int id) {
-        likes.add(id);
-    }
-
-    public void deleteLike(int id) {
-        likes.remove(id);
-    }
-
-    public int getLikesCount() {
-        return likes.size();
-    }
 }
