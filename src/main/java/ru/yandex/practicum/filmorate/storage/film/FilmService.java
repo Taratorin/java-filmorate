@@ -5,10 +5,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class FilmService {
@@ -22,15 +19,11 @@ public class FilmService {
     }
 
     public List<Film> getFilms() {
-        return filmStorage.getFilms().stream()
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toList());
+        return filmStorage.getFilms();
     }
 
     public Film getFilmById(int id) {
-        return filmStorage.getFilmById(id)
-                .orElseThrow(() -> new NotFoundException("Фильм " + id + " не найден."));
+        return filmStorage.getFilmById(id);
     }
 
     public Film createFilm(Film film) {
@@ -58,14 +51,7 @@ public class FilmService {
     }
 
     public List<Film> getPopularFilms(int count) {
-        Comparator<Film> comparator =
-                Comparator.comparing(film -> -1 * film.getLikesCount());
-        return filmStorage.getFilms().stream()
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .sorted(comparator)
-                .limit(count)
-                .collect(Collectors.toList());
+        return filmStorage.getPopularFilms(count);
     }
 
     private void checkFilmId(int id) {

@@ -2,6 +2,8 @@ package ru.yandex.practicum.filmorate.storage.dao;
 
 import lombok.AllArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
@@ -28,10 +30,24 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User createUser(User user) {
         user.setId(getId());
+        KeyHolder keyHolder = new GeneratedKeyHolder();
         String sql = "INSERT INTO PUBLIC.USERS\n" +
-                "(USER_ID, EMAIL, LOGIN, NAME, BIRTHDAY)\n" +
-                "VALUES(?, ?, ?, ?, ?);";
-        jdbcTemplate.update(sql, user.getId(), user.getEmail(), user.getLogin(), user.getName(), user.getBirthday());
+                "(EMAIL, LOGIN, NAME, BIRTHDAY)\n" +
+                "VALUES(?, ?, ?, ?);";
+
+//        jdbcTemplate.update(con -> {
+//            PreparedStatement ps = con
+//                    .prepareStatement(sql);
+//            ps.setString(1, user.getEmail());
+//            ps.setString(2, user.getLogin());
+//            ps.setString(3, user.getName());
+//            ps.setDate(4, Date.valueOf(user.getBirthday()));
+//            return ps;
+//        }, keyHolder);
+//
+//        user.setId((Integer) keyHolder.getKey());
+
+        jdbcTemplate.update(sql, user.getEmail(), user.getLogin(), user.getName(), user.getBirthday());
         return user;
     }
 
@@ -118,6 +134,32 @@ public class UserDbStorage implements UserStorage {
                 }
             }
         }
+    }
+
+    @Override
+    public List<User> getCommonFriends(int id1, int id2) {
+        String sql = "SELECT * FROM USERS u \n" +
+                "WHERE USER_ID IN \n" +
+                "(\n" +
+                "SELECT *\n" +
+                "FROM\n" +
+                "(SELECT f.FRIEND_ID AS FRIENDS\n" +
+                "FROM FRIENDS f\n" +
+                "WHERE f.USER_ID = ?\n" +
+                "UNION\n" +
+                "SELECT f.USER_ID\n" +
+                "FROM FRIENDS f \n" +
+                "WHERE (f.FRIEND_ID = ? AND f.IF_APPROVED = true))\n" +
+                "WHERE friends IN (\n" +
+                "SELECT f.FRIEND_ID  AS FRIENDS\n" +
+                "FROM FRIENDS f\n" +
+                "WHERE f.USER_ID = ?\n" +
+                "UNION\n" +
+                "SELECT f.USER_ID\n" +
+                "FROM FRIENDS f \n" +
+                "WHERE (f.FRIEND_ID = ? AND f.IF_APPROVED = true))\n" +
+                ");";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> makeUser(rs), id1, id1, id2, id2);
     }
 
     private User makeUser(ResultSet rs) throws SQLException {
