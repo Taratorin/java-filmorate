@@ -14,10 +14,8 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @AllArgsConstructor
@@ -28,7 +26,14 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public List<Film> getFilms() {
         String sql = "SELECT * FROM PUBLIC.FILMS f JOIN RATINGS r ON f.RATING_ID = r.RATING_ID";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> makeFilm(rs));
+        List<Film> films = jdbcTemplate.query(sql, (rs, rowNum) -> makeFilm(rs));
+        Map<Integer, List<Genre>> genres = getGenres(films);
+        for (Film film : films) {
+            int id = film.getId();
+            List<Genre> genreList = genres.get(id);
+            film.setGenres(Objects.requireNonNullElseGet(genreList, ArrayList::new));
+        }
+        return films;
     }
 
     @Override
@@ -61,6 +66,10 @@ public class FilmDbStorage implements FilmStorage {
         if (film.getGenres() != null) {
             updateFilmGenre(film);
         }
+        Map<Integer, List<Genre>> genres = getGenres(List.of(film));
+        int filmId = film.getId();
+        List<Genre> genreList = genres.get(filmId);
+        film.setGenres(Objects.requireNonNullElseGet(genreList, ArrayList::new));
         return film;
     }
 
@@ -69,6 +78,12 @@ public class FilmDbStorage implements FilmStorage {
         String sql = "SELECT * FROM PUBLIC.FILMS f JOIN RATINGS r ON f.RATING_ID = r.RATING_ID WHERE FILM_ID = ?";
         List<Film> query = jdbcTemplate.query(sql, (rs, rowNum) -> makeFilm(rs), id);
         if (!query.isEmpty()) {
+            Map<Integer, List<Genre>> genres = getGenres(query);
+            for (Film film : query) {
+                int filmId = film.getId();
+                List<Genre> genreList = genres.get(filmId);
+                film.setGenres(Objects.requireNonNullElseGet(genreList, ArrayList::new));
+            }
             return query.get(0);
         } else {
             throw new NotFoundException("Фильм с id = " + id + " не найден.");
@@ -105,23 +120,30 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getPopularFilms(int count) {
-        String sql = "SELECT * FROM PUBLIC.FILMS WHERE FILM_ID IN" +
-                " (SELECT FILM_ID FROM PUBLIC.LIKES GROUP BY FILM_ID\n" +
-                "ORDER BY COUNT(USER_ID) DESC);";
+        String sql = "SELECT * FROM PUBLIC.FILMS f\n" +
+                "JOIN RATINGS r ON f.RATING_ID = r.RATING_ID\n" +
+                "WHERE FILM_ID IN (SELECT FILM_ID FROM PUBLIC.LIKES GROUP BY FILM_ID ORDER BY COUNT(USER_ID) DESC);";
         List<Film> query = jdbcTemplate.query(sql, (rs, rowNum) -> makeFilm(rs));
         if (!query.isEmpty()) {
+            Map<Integer, List<Genre>> genres = getGenres(query);
+            for (Film film : query) {
+                int filmId = film.getId();
+                List<Genre> genreList = genres.get(filmId);
+                film.setGenres(Objects.requireNonNullElseGet(genreList, ArrayList::new));
+            }
             return query;
         } else {
-            String sqlIfEmptyList = "SELECT * FROM PUBLIC.FILMS;";
-            return jdbcTemplate.query(sqlIfEmptyList, (rs, rowNum) -> makeFilm(rs));
+            return getFilms();
         }
     }
 
     private void updateFilmGenre(Film film) {
         String sqlDelete = "DELETE FROM PUBLIC.FILM_GENRE WHERE FILM_ID = ?;";
         jdbcTemplate.update(sqlDelete, film.getId());
-        String sql = "INSERT INTO PUBLIC.FILM_GENRE (FILM_ID, GENRE_ID) VALUES(?, ?);";
-        ArrayList<Genre> genres = new ArrayList<>(film.getGenres());
+        Set<Genre> genreSet = new HashSet<>(film.getGenres());
+        System.out.println(genreSet);
+        ArrayList<Genre> genres = new ArrayList<>(genreSet);
+        System.out.println(genres);
         jdbcTemplate.batchUpdate(
                 "INSERT INTO PUBLIC.FILM_GENRE (FILM_ID, GENRE_ID) VALUES(?, ?)",
                 new BatchPreparedStatementSetter() {
@@ -146,7 +168,6 @@ public class FilmDbStorage implements FilmStorage {
     private Film makeFilm(ResultSet rs) {
         try {
             int id = rs.getInt("FILM_ID");
-            LinkedHashSet<Genre> genres = getGenres(id);
             Film film = Film.builder()
                     .id(id)
                     .name(rs.getString("TITLE"))
@@ -157,7 +178,6 @@ public class FilmDbStorage implements FilmStorage {
                             rs.getInt("RATING_ID"),
                             rs.getString("RATING_NAME")
                     ))
-                    .genres(genres)
                     .likesCount(getLikesSet(id).size())
                     .build();
             film.setLikesCount(getLikesSet(film.getId()).size());
@@ -167,11 +187,14 @@ public class FilmDbStorage implements FilmStorage {
         }
     }
 
-    private Genre makeGenre(ResultSet rs) throws SQLException {
-        return new Genre(
+    private Map<Integer, List<Genre>> makeGenre(ResultSet rs) throws SQLException {
+        Map<Integer, List<Genre>> map = new HashMap<>();
+        Genre genre = new Genre(
                 rs.getInt("GENRE_ID"),
-                rs.getString("GENRE_TITLE")
-        );
+                rs.getString("GENRE_TITLE"));
+        List<Genre> genres = new ArrayList<>(List.of(genre));
+        map.put(rs.getInt("FILM_ID"), genres);
+        return map;
     }
 
     private Mpa makeMpa(int id) {
@@ -182,12 +205,32 @@ public class FilmDbStorage implements FilmStorage {
         return new Mpa(id, mpaName);
     }
 
-    private LinkedHashSet<Genre> getGenres(int id) {
-        String sql = "SELECT g.GENRE_ID, g.GENRE_TITLE " +
+    private Map<Integer, List<Genre>> getGenres(List<Film> films) {
+        List<Integer> filmsId = films.stream()
+                .map(Film::getId)
+                .collect(Collectors.toList());
+        String inSql = String.join(",", Collections.nCopies(filmsId.size(), "?"));
+        String sql = "SELECT * " +
                 "FROM FILM_GENRE fg JOIN GENRES g ON fg.GENRE_ID = g.GENRE_ID " +
-                "WHERE fg.FILM_ID = " + id;
-        List<Genre> query = jdbcTemplate.query(sql, (rs, rowNum) -> makeGenre(rs));
-        return new LinkedHashSet<>(query);
+                "WHERE fg.FILM_ID IN (%s)";
+        List<Map<Integer, List<Genre>>> maps = jdbcTemplate.query(
+                String.format(sql, inSql),
+                filmsId.toArray(),
+                (rs, rowNum) -> makeGenre(rs)
+        );
+        Map<Integer, List<Genre>> map = new HashMap<>();
+        for (Map<Integer, List<Genre>> currentMap : maps) {
+            for (Integer id : currentMap.keySet()) {
+                List<Genre> list = map.get(id);
+                if (list != null) {
+                    list.add(currentMap.get(id).get(0));
+                } else {
+                    list = currentMap.get(id);
+                }
+                map.put(id, list);
+            }
+        }
+        return map;
     }
 
     private int getLikesById(ResultSet rs) throws SQLException {

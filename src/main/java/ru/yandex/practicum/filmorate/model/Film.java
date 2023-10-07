@@ -9,7 +9,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
-import java.util.LinkedHashSet;
+import java.util.List;
 
 @Data
 @Builder
@@ -26,7 +26,7 @@ public class Film {
     private int duration;
     @NotNull
     private Mpa mpa;
-    private LinkedHashSet<Genre> genres;
+    private List<Genre> genres;
     private int likesCount;
 
 }

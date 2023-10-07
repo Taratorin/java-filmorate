@@ -9,8 +9,7 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,25 +28,20 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User createUser(User user) {
-        user.setId(getId());
         KeyHolder keyHolder = new GeneratedKeyHolder();
         String sql = "INSERT INTO PUBLIC.USERS\n" +
                 "(EMAIL, LOGIN, NAME, BIRTHDAY)\n" +
                 "VALUES(?, ?, ?, ?);";
-
-//        jdbcTemplate.update(con -> {
-//            PreparedStatement ps = con
-//                    .prepareStatement(sql);
-//            ps.setString(1, user.getEmail());
-//            ps.setString(2, user.getLogin());
-//            ps.setString(3, user.getName());
-//            ps.setDate(4, Date.valueOf(user.getBirthday()));
-//            return ps;
-//        }, keyHolder);
-//
-//        user.setId((Integer) keyHolder.getKey());
-
-        jdbcTemplate.update(sql, user.getEmail(), user.getLogin(), user.getName(), user.getBirthday());
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, user.getEmail());
+            ps.setString(2, user.getLogin());
+            ps.setString(3, user.getName());
+            ps.setDate(4, Date.valueOf(user.getBirthday()));
+            return ps;
+        }, keyHolder);
+        int key = (int) keyHolder.getKey();
+        user.setId(key);
         return user;
     }
 
@@ -170,12 +164,5 @@ public class UserDbStorage implements UserStorage {
                 .name(rs.getString("NAME"))
                 .birthday(rs.getDate("BIRTHDAY").toLocalDate())
                 .build();
-    }
-
-    private int getId() {
-        String sqlGetId = "SELECT COUNT(USER_ID) AS ID FROM PUBLIC.USERS;";
-        SqlRowSet set = jdbcTemplate.queryForRowSet(sqlGetId);
-        set.next();
-        return set.getInt(1) + 1;
     }
 }
