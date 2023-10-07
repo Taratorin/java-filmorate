@@ -24,49 +24,59 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @AutoConfigureTestDatabase
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Transactional
 class FilmorateApplicationTests {
 
-    private final UserDbStorage userStorage;
-    private final FilmDbStorage filmStorage;
-    private final MpaStorageDb mpaStorageDb;
-    private final GenreStorageDb genreStorageDb;
+    private UserDbStorage userStorage;
+    private FilmDbStorage filmStorage;
+    private MpaStorageDb mpaStorageDb;
+    private GenreStorageDb genreStorageDb;
+
+    @Autowired
+    public FilmorateApplicationTests(UserDbStorage userStorage, FilmDbStorage filmStorage, MpaStorageDb mpaStorageDb, GenreStorageDb genreStorageDb) {
+        this.userStorage = userStorage;
+        this.filmStorage = filmStorage;
+        this.mpaStorageDb = mpaStorageDb;
+        this.genreStorageDb = genreStorageDb;
+    }
 
     @Test
+    @Transactional
     public void testGetUsers() {
         List<User> users = userStorage.getUsers();
         assertEquals(users.size(), 0);
     }
 
     @Test
+    @Transactional
     public void testCreateUser() {
         User userToPut = getUser().get(0);
         userStorage.createUser(userToPut);
-        User userInBd = userStorage.getUserById(1).get();
+        User userInBd = userStorage.getUserById(20).get();
         assertEquals(userToPut, userInBd);
     }
 
     @Test
+    @Transactional
     public void testGetUserById() {
         User user1 = getUser().get(0);
         userStorage.createUser(user1);
-        Optional<User> userOptional = userStorage.getUserById(1);
+        Optional<User> userOptional = userStorage.getUserById(25);
         assertThat(userOptional)
                 .isPresent()
                 .hasValueSatisfying(user ->
-                        assertThat(user).hasFieldOrPropertyWithValue("id", 1)
+                        assertThat(user).hasFieldOrPropertyWithValue("id", 25)
                 );
     }
 
     @Test
+    @Transactional
     public void testUpdateUser() {
-        User user1 = getUser().get(0);
-        userStorage.createUser(user1);
-        User userToUpdate = userStorage.getUserById(1).get();
+        userStorage.createUser(getUser().get(0));
+        User userToUpdate = userStorage.getUserById(4).get();
         userToUpdate.setName("newName");
         userStorage.updateUser(userToUpdate);
-        Optional<User> userOptional = userStorage.getUserById(1);
+        Optional<User> userOptional = userStorage.getUserById(4);
         assertThat(userOptional)
                 .isPresent()
                 .hasValueSatisfying(user ->
@@ -75,15 +85,16 @@ class FilmorateApplicationTests {
     }
 
     @Test
+    @Transactional
     public void testGetFriends() {
         userStorage.createUser(getUser().get(0));
         userStorage.createUser(getUser().get(1));
         userStorage.createUser(getUser().get(2));
-        userStorage.checkAndUpdateFriends(1, 2);
-        userStorage.checkAndUpdateFriends(3, 2);
-        List<User> friends1 = userStorage.getFriends(1);
-        List<User> friends2 = userStorage.getFriends(2);
-        List<User> friends3 = userStorage.getFriends(3);
+        userStorage.checkAndUpdateFriends(12, 13);
+        userStorage.checkAndUpdateFriends(14, 13);
+        List<User> friends1 = userStorage.getFriends(12);
+        List<User> friends2 = userStorage.getFriends(13);
+        List<User> friends3 = userStorage.getFriends(14);
         assertEquals(friends1.size(), 1);
         assertEquals(friends2.size(), 0);
         assertEquals(friends3.size(), 1);
@@ -91,26 +102,28 @@ class FilmorateApplicationTests {
     }
 
     @Test
+    @Transactional
     public void testCheckAndUpdateFriendsWhenFriendApproved() {
         userStorage.createUser(getUser().get(0));
         userStorage.createUser(getUser().get(1));
         userStorage.createUser(getUser().get(2));
-        userStorage.checkAndUpdateFriends(1, 2);
-        userStorage.checkAndUpdateFriends(3, 2);
-        userStorage.checkAndUpdateFriends(2, 1);
-        userStorage.checkAndUpdateFriends(2, 3);
-        List<User> friends1 = userStorage.getFriends(1);
-        List<User> friends2 = userStorage.getFriends(2);
-        List<User> friends3 = userStorage.getFriends(3);
+        userStorage.checkAndUpdateFriends(5, 6);
+        userStorage.checkAndUpdateFriends(7, 6);
+        userStorage.checkAndUpdateFriends(6, 5);
+        userStorage.checkAndUpdateFriends(6, 7);
+        List<User> friends1 = userStorage.getFriends(5);
+        List<User> friends2 = userStorage.getFriends(6);
+        List<User> friends3 = userStorage.getFriends(7);
         assertEquals(friends1.size(), 1);
         assertEquals(friends2.size(), 2);
         assertEquals(friends3.size(), 1);
         assertEquals(friends1, friends3);
-        assertEquals(friends2.get(0), userStorage.getUserById(1).get());
-        assertEquals(friends2.get(1), userStorage.getUserById(3).get());
+        assertEquals(friends2.get(0), userStorage.getUserById(5).get());
+        assertEquals(friends2.get(1), userStorage.getUserById(7).get());
     }
 
     @Test
+    @Transactional
     public void testIsUserPresentShouldReturnTrue() {
         userStorage.createUser(getUser().get(0));
         boolean bool = userStorage.isUserPresent(1);
@@ -118,201 +131,205 @@ class FilmorateApplicationTests {
     }
 
     @Test
+    @Transactional
     public void testIsUserPresentShouldReturnFalse() {
         userStorage.createUser(getUser().get(0));
-        boolean bool = userStorage.isUserPresent(10);
+        boolean bool = userStorage.isUserPresent(100);
         assertFalse(bool);
     }
 
     @Test
+    @Transactional
     public void testDeleteFriendNoAction() {
         userStorage.createUser(getUser().get(0));
         userStorage.createUser(getUser().get(1));
-        userStorage.checkAndUpdateFriends(1, 2);
-        List<User> friends1 = userStorage.getFriends(1);
-        List<User> friends2 = userStorage.getFriends(2);
-        assertEquals(friends1.get(0), userStorage.getUserById(2).get());
+        userStorage.checkAndUpdateFriends(26, 27);
+        List<User> friends1 = userStorage.getFriends(26);
+        List<User> friends2 = userStorage.getFriends(27);
+        assertEquals(friends1.get(0), userStorage.getUserById(27).get());
         assertTrue(friends2.isEmpty());
 
-        userStorage.deleteFriend(2, 1);
+        userStorage.deleteFriend(27, 26);
 
-        friends1 = userStorage.getFriends(1);
-        friends2 = userStorage.getFriends(2);
-        assertEquals(friends1.get(0), userStorage.getUserById(2).get());
+        friends1 = userStorage.getFriends(26);
+        friends2 = userStorage.getFriends(27);
+        assertEquals(friends1.get(0), userStorage.getUserById(27).get());
         assertTrue(friends2.isEmpty());
     }
 
     @Test
+    @Transactional
     public void testDeleteFriendWithoutApprove() {
         userStorage.createUser(getUser().get(0));
         userStorage.createUser(getUser().get(1));
-        userStorage.checkAndUpdateFriends(1, 2);
-        List<User> friends1 = userStorage.getFriends(1);
-        List<User> friends2 = userStorage.getFriends(2);
-        assertEquals(friends1.get(0), userStorage.getUserById(2).get());
+        userStorage.checkAndUpdateFriends(8, 9);
+        List<User> friends1 = userStorage.getFriends(8);
+        List<User> friends2 = userStorage.getFriends(9);
+        assertEquals(friends1.get(0), userStorage.getUserById(9).get());
         assertTrue(friends2.isEmpty());
 
-        userStorage.deleteFriend(1, 2);
+        userStorage.deleteFriend(8, 9);
 
-        friends1 = userStorage.getFriends(1);
-        friends2 = userStorage.getFriends(2);
+        friends1 = userStorage.getFriends(8);
+        friends2 = userStorage.getFriends(9);
         assertTrue(friends1.isEmpty());
         assertTrue(friends2.isEmpty());
     }
 
     @Test
+    @Transactional
     public void testDeleteFriendWhenApproved() {
         userStorage.createUser(getUser().get(0));
         userStorage.createUser(getUser().get(1));
-        userStorage.checkAndUpdateFriends(1, 2);
-        userStorage.checkAndUpdateFriends(2, 1);
-        List<User> friends1 = userStorage.getFriends(1);
-        List<User> friends2 = userStorage.getFriends(2);
-        assertEquals(friends1.get(0), userStorage.getUserById(2).get());
-        assertEquals(friends2.get(0), userStorage.getUserById(1).get());
+        userStorage.checkAndUpdateFriends(10, 11);
+        userStorage.checkAndUpdateFriends(11, 10);
+        List<User> friends1 = userStorage.getFriends(10);
+        List<User> friends2 = userStorage.getFriends(11);
+        assertEquals(friends1.get(0), userStorage.getUserById(11).get());
+        assertEquals(friends2.get(0), userStorage.getUserById(10).get());
 
-        userStorage.deleteFriend(1, 2);
+        userStorage.deleteFriend(10, 11);
 
-        friends1 = userStorage.getFriends(1);
-        friends2 = userStorage.getFriends(2);
+        friends1 = userStorage.getFriends(10);
+        friends2 = userStorage.getFriends(11);
         assertTrue(friends1.isEmpty());
-        assertEquals(friends2.get(0), userStorage.getUserById(1).get());
+        assertEquals(friends2.get(0), userStorage.getUserById(10).get());
     }
 
     @Test
+    @Transactional
     public void testGetFilms() {
-        List<Optional<Film>> films = filmStorage.getFilms();
+        List<Film> films = filmStorage.getFilms();
         assertEquals(films.size(), 0);
     }
 
     @Test
+    @Transactional
     public void testCreateFilm() {
         Film film = getFilms().get(0);
         filmStorage.createFilm(film);
-        Optional<Film> optionalFilm = filmStorage.getFilmById(1);
-        assertThat(optionalFilm)
-                .isPresent()
-                .hasValueSatisfying(f ->
-                        assertThat(f).hasFieldOrPropertyWithValue("id", 1)
-                );
+        Film filmFromDb = filmStorage.getFilmById(1);
+        assertEquals(filmFromDb.getId(), 1);
     }
 
     @Test
+    @Transactional
     public void testUpdateFilm() {
         filmStorage.createFilm(getFilms().get(0));
-        Film filmToUpdate = filmStorage.getFilmById(1).get();
+        Film filmToUpdate = filmStorage.getFilmById(1);
         filmToUpdate.setName("New name for first film");
         filmStorage.updateFilm(filmToUpdate);
-        Optional<Film> optionalFilm = filmStorage.getFilmById(1);
-        assertThat(optionalFilm)
-                .isPresent()
-                .hasValueSatisfying(f ->
-                        assertThat(f).hasFieldOrPropertyWithValue("name", "New name for first film")
-                );
+        Film filmFromDb = filmStorage.getFilmById(1);
+        assertEquals(filmFromDb.getName(), "New name for first film");
     }
 
     @Test
+    @Transactional
     public void testGetFilmById() {
         filmStorage.createFilm(getFilms().get(0));
-        Optional<Film> optionalFilm = filmStorage.getFilmById(1);
-        assertThat(optionalFilm)
-                .isPresent()
-                .hasValueSatisfying(f -> {
-                    assertThat(f).hasFieldOrPropertyWithValue("id", 1);
-                    assertThat(f).hasFieldOrPropertyWithValue("name", "First film");
-                    assertThat(f).hasFieldOrPropertyWithValue("description", "Description of first film");
-                    assertThat(f).hasFieldOrPropertyWithValue("releaseDate", LocalDate.of(1960, 12, 5));
-                    assertThat(f).hasFieldOrPropertyWithValue("duration", 120);
-                });
+        Film filmFromDb = filmStorage.getFilmById(1);
+        assertEquals(filmFromDb.getId(), 1);
+        assertEquals(filmFromDb.getName(), "First film");
+        assertEquals(filmFromDb.getDescription(), "Description of first film");
+        assertEquals(filmFromDb.getReleaseDate(), LocalDate.of(1960, 12, 5));
     }
 
     @Test
+    @Transactional
     public void testIsFilmPresentTrue() {
         filmStorage.createFilm(getFilms().get(0));
         assertTrue(filmStorage.isFilmPresent(1));
     }
 
     @Test
+    @Transactional
     public void testIsFilmPresentFalse() {
         assertFalse(filmStorage.isFilmPresent(1));
     }
 
 
     @Test
+    @Transactional
     public void testAddLikeToFilm() {
         filmStorage.createFilm(getFilms().get(0));
         filmStorage.createFilm(getFilms().get(1));
         userStorage.createUser(getUser().get(0));
         userStorage.createUser(getUser().get(1));
-        Film film = filmStorage.getFilmById(2).get();
-        assertEquals(film.getLikes().size(), 0);
-        filmStorage.addLikeToFilm(2, 1);
-        assertEquals(film.getLikes().size(), 0);
+        Film film = filmStorage.getFilmById(2);
+        assertEquals(film.getLikesCount(), 0);
+        filmStorage.addLikeToFilm(2, 22);
+        assertEquals(film.getLikesCount(), 0);
     }
 
     @Test
+    @Transactional
     public void testAddLikeToFilmTwice() {
         filmStorage.createFilm(getFilms().get(0));
         filmStorage.createFilm(getFilms().get(1));
         userStorage.createUser(getUser().get(0));
         userStorage.createUser(getUser().get(1));
-        Film film = filmStorage.getFilmById(2).get();
-        assertEquals(film.getLikes().size(), 0);
-        filmStorage.addLikeToFilm(2, 1);
-        assertEquals(film.getLikes().size(), 0);
-        filmStorage.addLikeToFilm(2, 1);
-        assertEquals(film.getLikes().size(), 0);
+        Film film = filmStorage.getFilmById(2);
+        assertEquals(film.getLikesCount(), 0);
+        filmStorage.addLikeToFilm(2, 3);
+        assertEquals(film.getLikesCount(), 0);
+        filmStorage.addLikeToFilm(2, 3);
+        assertEquals(film.getLikesCount(), 0);
     }
 
     @Test
+    @Transactional
     public void testDeleteLike() {
         filmStorage.createFilm(getFilms().get(0));
         filmStorage.createFilm(getFilms().get(1));
         userStorage.createUser(getUser().get(0));
         userStorage.createUser(getUser().get(1));
-        filmStorage.addLikeToFilm(2, 1);
-        Film film = filmStorage.getFilmById(2).get();
-        assertEquals(film.getLikes().size(), 1);
-        filmStorage.deleteLike(2, 1);
-        Film filmDeletedLike = filmStorage.getFilmById(2).get();
-        assertEquals(filmDeletedLike.getLikes().size(), 0);
+        filmStorage.addLikeToFilm(2, 24);
+        Film film = filmStorage.getFilmById(2);
+        assertEquals(film.getLikesCount(), 1);
+        filmStorage.deleteLike(2, 24);
+        Film filmDeletedLike = filmStorage.getFilmById(2);
+        assertEquals(filmDeletedLike.getLikesCount(), 0);
     }
 
     @Test
+    @Transactional
     public void testDeleteLikeNotCorrectUser() {
         filmStorage.createFilm(getFilms().get(0));
         filmStorage.createFilm(getFilms().get(1));
         userStorage.createUser(getUser().get(0));
         userStorage.createUser(getUser().get(1));
-        filmStorage.addLikeToFilm(2, 1);
-        Film film = filmStorage.getFilmById(2).get();
-        assertEquals(film.getLikes().size(), 1);
-        filmStorage.deleteLike(2, 2);
-        Film filmDeletedLike = filmStorage.getFilmById(2).get();
-        assertEquals(filmDeletedLike.getLikes().size(), 1);
+        filmStorage.addLikeToFilm(2, 18);
+        Film film = filmStorage.getFilmById(2);
+        assertEquals(film.getLikesCount(), 1);
+        filmStorage.deleteLike(2, 19);
+        Film filmDeletedLike = filmStorage.getFilmById(2);
+        assertEquals(filmDeletedLike.getLikesCount(), 1);
     }
 
     @Test
+    @Transactional
     public void testDeleteLikeNotCorrectFilm() {
         filmStorage.createFilm(getFilms().get(0));
         filmStorage.createFilm(getFilms().get(1));
         userStorage.createUser(getUser().get(0));
         userStorage.createUser(getUser().get(1));
-        filmStorage.addLikeToFilm(2, 1);
-        Film film = filmStorage.getFilmById(2).get();
-        assertEquals(film.getLikes().size(), 1);
-        filmStorage.deleteLike(3, 1);
-        Film filmDeletedLike = filmStorage.getFilmById(2).get();
-        assertEquals(filmDeletedLike.getLikes().size(), 1);
+        filmStorage.addLikeToFilm(2, 16);
+        Film film = filmStorage.getFilmById(2);
+        assertEquals(film.getLikesCount(), 1);
+        filmStorage.deleteLike(3, 16);
+        Film filmDeletedLike = filmStorage.getFilmById(2);
+        assertEquals(filmDeletedLike.getLikesCount(), 1);
     }
 
     @Test
+    @Transactional
     public void testGetMpaList() {
         List<Mpa> mpaList = mpaStorageDb.getMpaList();
         assertEquals(5, mpaList.size());
     }
 
     @Test
+    @Transactional
     public void testGetMpaById() {
         assertThat(mpaStorageDb.getMpaById(1))
                 .isPresent()
@@ -347,12 +364,14 @@ class FilmorateApplicationTests {
     }
 
     @Test
+    @Transactional
     public void testGetGenreList() {
         List<Genre> genreList = genreStorageDb.getGenreList();
         assertEquals(6, genreList.size());
     }
 
     @Test
+    @Transactional
     public void testGetGenreById() {
         assertThat(genreStorageDb.getGenreById(1))
                 .isPresent()
