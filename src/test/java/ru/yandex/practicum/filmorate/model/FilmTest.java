@@ -69,6 +69,12 @@ class FilmTest {
                 .description("adipisicing")
                 .releaseDate(LocalDate.of(1967, 3, 25))
                 .duration(100)
+                .mpa(
+                        new Mpa(
+                                1,
+                                "G"
+                        )
+                )
                 .build();
     }
 }
