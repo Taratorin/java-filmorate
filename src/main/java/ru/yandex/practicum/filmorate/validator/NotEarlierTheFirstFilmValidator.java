@@ -15,7 +15,7 @@ public class NotEarlierTheFirstFilmValidator implements
     }
 
     @Override
-    public boolean isValid(LocalDate localDate, ConstraintValidatorContext constraintValidatorContext) {
-        return localDate != null && !localDate.isBefore(firstFilmDate);
+    public boolean isValid(LocalDate date, ConstraintValidatorContext constraintValidatorContext) {
+        return date != null && !date.isBefore(firstFilmDate);
     }
 }
