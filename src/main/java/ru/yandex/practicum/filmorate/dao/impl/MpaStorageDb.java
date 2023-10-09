@@ -1,9 +1,10 @@
-package ru.yandex.practicum.filmorate.storage.dao;
+package ru.yandex.practicum.filmorate.dao.impl;
 
 import lombok.AllArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.dao.MpaStorage;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.ResultSet;
@@ -13,10 +14,11 @@ import java.util.Optional;
 
 @Component
 @AllArgsConstructor
-public class MpaStorageDb {
+public class MpaStorageDb implements MpaStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
+    @Override
     public Optional<Mpa> getMpaById(int id) {
         String sql = "SELECT RATING_NAME FROM PUBLIC.RATINGS WHERE RATING_ID = ?;";
         SqlRowSet set = jdbcTemplate.queryForRowSet(sql, id);
@@ -29,6 +31,7 @@ public class MpaStorageDb {
         }
     }
 
+    @Override
     public List<Mpa> getMpaList() {
         String sql = "SELECT * FROM PUBLIC.RATINGS;";
         return jdbcTemplate.query(sql, (rs, rowNum) -> makeMpa(rs));
